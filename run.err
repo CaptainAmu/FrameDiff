@@ -1,0 +1,11 @@
+Warning: importing 'simtk.openmm' is deprecated.  Import 'openmm' instead.
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/slurm-storage/shucli/PROJECT_FOLDER/FrameDiff/experiments/train_se3_diffusion.py", line 828, in run
+    exp.start_training()
+  File "/slurm-storage/shucli/PROJECT_FOLDER/FrameDiff/experiments/train_se3_diffusion.py", line 281, in start_training
+    raise ValueError(f"require {self._exp_conf.num_gpus} GPUs, but only {len(self._available_gpus)} GPUs available ")
+ValueError: require 2 GPUs, but only 1 GPUs available 
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+srun: error: gauss: task 0: Exited with exit code 1

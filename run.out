@@ -1,0 +1,4 @@
+[2025-10-26 09:43:00,181][data.so3_diffuser][INFO] - Using cached IGSO3 in .cache/eps_1000_omega_1000_min_sigma_0_1_max_sigma_1_5_schedule_logarithmic
+[2025-10-26 09:43:00,902][__main__][INFO] - Number of model parameters 17446190
+[2025-10-26 09:43:00,907][__main__][INFO] - Checkpoints saved to: ./ckpt/baseline/26D_10M_2025Y_09h_43m_00s
+[2025-10-26 09:43:00,907][__main__][INFO] - Evaluation saved to: ./eval_outputs/baseline/26D_10M_2025Y_09h_43m_00s

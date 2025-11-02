@@ -34,30 +34,71 @@ import esm
 CA_IDX = residue_constants.atom_order['CA']
 
 
-def process_chain(design_pdb_feats):
+
+def process_chain(design_pdb_feats: Dict[str, np.ndarray]) -> Dict[str, torch.Tensor]:
+    """
+    Process chain features from design PDB features.
+    
+    design_pdb_feats = {
+    'aatype': np.array([...], dtype=int),            # shape: [N]
+    'atom_positions': np.array([...], dtype=float),  # shape: [N, 37, 3]
+    'atom_mask': np.array([...], dtype=float),       # shape: [N, 37]
+    'residue_index': np.array([...], dtype=int),     # shape: [N]
+    'bb_mask': np.array([...], dtype=float),         # shape: [N]
+    }
+
+    Args:
+        design_pdb_feats: Design PDB features.
+
+    Returns:
+        Processed chain features.
+
+    """
     chain_feats = {
         'aatype': torch.tensor(design_pdb_feats['aatype']).long(),
         'all_atom_positions': torch.tensor(design_pdb_feats['atom_positions']).double(),
         'all_atom_mask': torch.tensor(design_pdb_feats['atom_mask']).double()
     }
+    # Convert atom37 features to frames.
     chain_feats = data_transforms.atom37_to_frames(chain_feats)
+    # Make atom14 masks.
     chain_feats = data_transforms.make_atom14_masks(chain_feats)
+    # Make atom14 positions.
     chain_feats = data_transforms.make_atom14_positions(chain_feats)
+    # Convert atom37 features to torsion angles.
     chain_feats = data_transforms.atom37_to_torsion_angles()(chain_feats)
+    # Get sequence index.
     seq_idx = design_pdb_feats['residue_index'] - np.min(design_pdb_feats['residue_index']) + 1
     chain_feats['seq_idx'] = seq_idx
+    # Get residue mask.
     chain_feats['res_mask'] = design_pdb_feats['bb_mask']
+    # Get residue index.
     chain_feats['residue_index'] = design_pdb_feats['residue_index']
     return chain_feats
 
 
 def create_pad_feats(pad_amt):
-    return {        
+    """
+    Create a dictionary of tensor features with length pad_amt
+    to be used for padding in the inference process.
+
+    Args:
+        pad_amt (int): The number of padding elements to add.
+
+    Returns:
+        A dictionary of tensor features with length pad_amt.
+    """
+    pad_feats = {        
+        # Residue mask - all residues are considered for prediction
         'res_mask': torch.ones(pad_amt),
+        # Fixed mask - no residues are fixed during prediction
         'fixed_mask': torch.zeros(pad_amt),
+        # Rigid group positions to be inferred
         'rigids_impute': torch.zeros((pad_amt, 4, 4)),
+        # Torsion angles to be inferred
         'torsion_impute': torch.zeros((pad_amt, 7, 2)),
     }
+    return pad_feats
 
 
 class Sampler:
@@ -416,7 +457,8 @@ class Sampler:
         return output
 
     def sample(self, sample_length: int):
-        """Sample based on length.
+        """
+        Sample a protein backbone given a length.
 
         Args:
             sample_length: length to sample
@@ -425,8 +467,8 @@ class Sampler:
             Sample outputs. See train_se3_diffusion.inference_fn.
         """
         # Process motif features.
-        res_mask = np.ones(sample_length)
-        fixed_mask = np.zeros_like(res_mask)
+        res_mask = np.ones(sample_length)  # All residues are diffused
+        fixed_mask = np.zeros_like(res_mask)  # No residues are fixed
 
         # Initialize data
         ref_sample = self.diffuser.sample_ref(
@@ -438,8 +480,8 @@ class Sampler:
             'res_mask': res_mask,
             'seq_idx': res_idx,
             'fixed_mask': fixed_mask,
-            'torsion_angles_sin_cos': np.zeros((sample_length, 7, 2)),
-            'sc_ca_t': np.zeros((sample_length, 3)),
+            'torsion_angles_sin_cos': np.zeros((sample_length, 7, 2)),  # No initial torsion angles. 3 backbone angles + 4 sidechain angles
+            'sc_ca_t': np.zeros((sample_length, 3)),  # translation from Calpha to sidechain frame.
             **ref_sample,
         }
         # Add batch dimension and move to GPU.

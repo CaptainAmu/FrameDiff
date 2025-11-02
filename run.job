@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -N 1     # nodes requested
+#SBATCH --job-name=prot_inf
+#SBATCH --output=PROJECT_FOLDER/FrameDiff/run.out
+#SBATCH --error=PROJECT_FOLDER/FrameDiff/run.err
+#SBATCH --time=00:05:00
+#SBATCH --mem=36000
+#SBATCH --gres=gpu:1
+#SBATCH --qos=short
+#SBATCH --partition=normal
+# the -u option means 'unbuffered',
+# which should continuously write output to the .out file
+srun -u /slurm-storage/shucli/.conda/envs/se3/bin/python ~/PROJECT_FOLDER/FrameDiff/experiments/train_se3_diffusion.py
